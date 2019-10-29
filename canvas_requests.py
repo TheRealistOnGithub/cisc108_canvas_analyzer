@@ -13,14 +13,17 @@ import requests
 import os
 import json
 import sqlite3
-import sys 
+import sys
 import re
+
 
 def get_user(user_id):
     return get("users/self/profile", user_id)
 
+
 def get_courses(user_id):
     return get("courses", user_id)
+
 
 def get_submissions(user_id, course_id):
     submissions = get("courses/{}/students/submissions".format(course_id), user_id)
@@ -31,13 +34,16 @@ def get_submissions(user_id, course_id):
         submission['assignment']['group'] = group_map[assignment_group_id].copy()
     return submissions
 
+
 # Make sure we are using the right Python version.
 if not sys.version_info >= (3, 0):
     raise Exception("This code is expected to be run in Python 3.x")
 
+
 # Special Exception class for checking purposes
 class CanvasException(Exception):
     pass
+
 
 # Change for different institution
 BASE_URL = 'https://vt.instructure.com/api/v1/'
@@ -51,9 +57,9 @@ if not os.access(DATABASE_NAME, os.F_OK):
                            'important here.').format(DATABASE_NAME, __file__))
 if not os.access(DATABASE_NAME, os.R_OK):
     raise CanvasException(('Error! Could not read the "{0}" file. '
-                          'Make sure that it readable by changing its '
-                          'permissions. You may need to get help from '
-                          'your instructor.').format(DATABASE_NAME, __file__))
+                           'Make sure that it readable by changing its '
+                           'permissions. You may need to get help from '
+                           'your instructor.').format(DATABASE_NAME, __file__))
 DATABASE = sqlite3.connect(DATABASE_NAME)
 
 # Preload the list of available users in the cache
@@ -62,6 +68,7 @@ USERS = [u.lower() for u, in USERS]
 
 # Responses are in the database as JSON data
 DATABASE.text_factory = lambda x: json.loads(x.decode('utf-8'))
+
 
 def get(url, user):
     '''
@@ -86,6 +93,7 @@ def get(url, user):
     # Otherwise, get via the requests module
     return _get_via_requests(url, user)
 
+
 def _normalize_url(url):
     '''
     Normalizes a URL to remove extra trailing slashes, and converts to
@@ -99,6 +107,7 @@ def _normalize_url(url):
     if url.endswith('/'):
         url = url[:-1]
     return url.lower()
+
 
 def _get_via_cache(url, user):
     '''
@@ -118,9 +127,10 @@ def _get_via_cache(url, user):
         # Perform the query selection
         rows = DATABASE.execute("""SELECT response FROM responses
                                  WHERE url=? AND user=?""",
-                                 (normalized_url, normalized_user))
+                                (normalized_url, normalized_user))
         return [r for r, in rows]
     return False
+
 
 def _get_via_requests(url, token):
     # Provide token and increase number of results returned to maximum
@@ -146,11 +156,11 @@ def _get_via_requests(url, token):
                 if errors:
                     error_message = errors[0]['message']
                     if error_message == 'Invalid access token.':
-                        exception= ("Invalid access token '{}' for "
-                                    "URL '{}'. Did you spell the name right?").format(token, url)
+                        exception = ("Invalid access token '{}' for "
+                                     "URL '{}'. Did you spell the name right?").format(token, url)
                     else:
-                        exception= ("Canvas error '{}' for "
-                                    "URL '{}'").format(error_message, url)
+                        exception = ("Canvas error '{}' for "
+                                     "URL '{}'").format(error_message, url)
                 else:
                     exception = ("General canvas error for "
                                  "URL '{}'").format(url)
