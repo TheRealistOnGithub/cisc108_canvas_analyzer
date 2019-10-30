@@ -106,13 +106,23 @@ def summarize_points(submissions: [dict]):
     :param submissions:
     :return:
     '''
-    points_possible_sum = 0
-    submission_points = 0
-    for assignment in submissions:
-        if assignment["score"] != None:
+    points_obtained = 0
+    points_possible_so_far = 0
+    for sub in submissions:
+        if sub["score"] != None:
+            score = sub["score"] * sub["assignment"]["group"]["group_weight"]
+            points_obtained = points_obtained + score
+            current_grade = round((points_obtained / score) * 100)
+            points = sub["assignment"]["points_possible"] * sub["assignment"]["group"]["group_weight"]
+            points_possible_so_far = points + points_possible_so_far
+        print("Current Grade: " + str(current_grade))
+        print("Points possible so far: " + str(points_possible_so_far))
+        print("Points Obtained: " + str(points_obtained))
 
 
 # 8) summarize_groups
+
+
 # 9) plot_scores
 # 10) plot_grade_trends
 
