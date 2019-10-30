@@ -27,9 +27,9 @@ def main(user):
     '''
     print_user_info(canvas_requests.get_user(user))
     print_courses(canvas_requests.get_courses(user))
-    courses = filter_available_courses(canvas_requests.get_courses(user))
-    course_ids = get_course_ids(canvas_requests.get_courses(user))
-    current_course = choose_course(course_ids)
+    filter_available_courses(canvas_requests.get_courses(user))
+    get_course_ids(canvas_requests.get_courses(user))
+    choose_course(get_course_ids(canvas_requests.get_courses(user)))
 
 
 # 2) print_user_info
@@ -93,9 +93,9 @@ def choose_course(listy: [int]) -> int:
     :param listy:
     :return:
     '''
-    choosy = int(input("Enter a valid course ID:"))
+    choosy = int(input("Enter a valid course ID please:"))  # gotta be nice
     while choosy not in listy:
-        choosy = int(input("Enter a valid course ID:"))
+        choosy = int(input("Enter a valid course ID please:"))
     return choosy
 
 
@@ -106,7 +106,10 @@ def summarize_points(submissions: [dict]):
     :param submissions:
     :return:
     '''
-    points_possible = 0
+    points_possible_sum = 0
+    submission_points = 0
+    for assignment in submissions:
+        if assignment["score"] != None:
 
 
 # 8) summarize_groups
