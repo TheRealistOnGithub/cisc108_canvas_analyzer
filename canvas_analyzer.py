@@ -15,6 +15,7 @@ author: Nitin Armstrong
 """
 import canvas_requests
 import matplotlib.pyplot as plt
+import datetime
 
 __version__ = 7
 
@@ -22,21 +23,24 @@ __version__ = 7
 # 1) main
 def main(user):
     '''
-
+    Consumes a string representing the user token (e.g., 'hermione') and calls all the other functions as shown in the diagram.
     :param user:
     :return:
     '''
     print_user_info(canvas_requests.get_user(user))
-    print_courses(canvas_requests.get_courses(user))
-    filter_available_courses(canvas_requests.get_courses(user))
-    get_course_ids(canvas_requests.get_courses(user))
-    choose_course(get_course_ids(canvas_requests.get_courses(user)))
+    courses = filter_available_courses(canvas_requests.get_courses(user))
+    print_courses(courses)
+    selected = choose_course(get_course_ids(courses))
+    summarize_points(canvas_requests.get_submissions(user, selected))
+    summarize_groups(canvas_requests.get_submissions(user, selected))
+    plot_scores(canvas_requests.get_submissions(user, selected))
+    plot_grade_trends(canvas_requests.get_submissions(user, selected))
 
 
 # 2) print_user_info
 def print_user_info(dicty: dict):
     '''
-
+    Consumes a User dictionary and prints out the user's name, title, primary email, and bio. It does not return anything.
     :param dicty:
     :return:
     '''
@@ -49,7 +53,7 @@ def print_user_info(dicty: dict):
 # 3) filter_available_courses
 def filter_available_courses(courses: [list]) -> [list]:
     '''
-
+    Consumes a list of Course dictionaries and returns a list of Course dictionaries where the workflow_state key's value is 'available' (as opposed to 'completed' or something else).
     :param courses:
     :return:
     '''
@@ -65,7 +69,7 @@ def filter_available_courses(courses: [list]) -> [list]:
 # 4) print_courses
 def print_courses(courses: list):
     '''
-
+    Consumes a list of Course dictionaries and prints out the ID and name of each course on separate lines.
     :param courses:
     :return:
     '''
@@ -77,7 +81,7 @@ def print_courses(courses: list):
 # 5) get_course_ids
 def get_course_ids(courses: list) -> [int]:
     '''
-
+    Consumes a list of Course dictionaries and returns a list of integers representing course IDs.
     :param courses:
     :return:
     '''
@@ -90,7 +94,8 @@ def get_course_ids(courses: list) -> [int]:
 # 6) choose_course
 def choose_course(listy: [int]) -> int:
     '''
-
+    Consumes a list of integers representing course IDs and prompts the user to enter a valid ID, and then returns an integer representing the user's chosen course ID.
+    If the user does not enter a valid ID, the function repeatedly loops until they type in a valid ID.
     :param listy:
     :return:
     '''
@@ -103,7 +108,7 @@ def choose_course(listy: [int]) -> int:
 # 7) summarize_points
 def summarize_points(submissions: [dict]):
     '''
-
+    Consumes a list of Submission dictionaries and prints out three summary statistics about the submissions where there is a score (i.e. the submissions score is not None
     :param submissions:
     :return:
     '''
@@ -122,21 +127,39 @@ def summarize_points(submissions: [dict]):
 
 
 # 8) summarize_groups
-def summarize_groups():
+def summarize_groups(submissions: [dict]):
+    '''
+    Consumes a list of Submission dictionaries and prints out the group name and unweighted grade for each group.
+    :param submissions:
+    :return:
+    '''
+    groups = {}
+    points_possible = {}
+    for sub in submissions:
+        if submissions != None:
+            name = submissions["assignment"]["group"]["name"]
+            if name not in groups:
+                groups[name] = 0
+                points_possible[name] = 0
+            groups[name] = groups[name] + sub["score"]
+            points_possible[name] = sub["assignment"]["points_possible"] + points_possible[name]
+    for name in groups:
+        key, value = groups[name], points_possible[name]
+        print("*", name, ":", round(100 * (key / value)))
 
 
 # 9) plot_scores
 def plot_scores(submissions: [dict]):
     '''
-
+    Consumes a list of Submission dictionaries and plots each submissions' grade as a histogram.
     :param submissions:
     :return:
     '''
     x = []
     for sub in submissions:
         if sub["score"] != None and sub["assignment"]["points_possible"] > 0:
-            grade = (100*sub["score"])/(sub["assignment"]["points_possible"])
-            a.append(grade)
+            grade = (100 * sub["score"]) / (sub["assignment"]["points_possible"])
+            x.append(grade)
         plt.hist(x)
         plt.title("Distribution of Grades")
         plt.xlabel("Grades")
@@ -145,7 +168,59 @@ def plot_scores(submissions: [dict]):
 
 
 # 10) plot_grade_trends
-def plot_grade_trends():
+def plot_grade_trends(submissions: [dict]):
+    '''
+    Consumes a list of Submission dictionaries and plots the grade trend of the submissions as a line plot.
+    :return:
+    '''
+    running_high_sum = 0
+    running_high_sums = []
+    running_low_sum = 0
+    running_low_sums = []
+    maximum = 0
+    maximums = []
+    dates = []
+    total_points = 0
+    for sub in submissions:
+        total_points = sub["assignment"]["points_possible"] * sub["assignment"]["group"][
+            "group_weight"] + total_points
+        a_string_date = sub["assignment"]["due_at"]
+        dates.append(datetime.datetime.strptime(a_string_date, "%Y-%m-%dT%H:%M:%SZ"))
+        maximum = 100 * sub["assignment"]["points_possible"] * sub["assignment"]["group"][
+            "group_weight"] + maximum
+        maximums.append(maximum)
+        if sub["score"] is None:
+            running_high_sum = 100 * sub["assignment"]["points_possible"] * sub["assignment"]["group"][
+                "group_weight"] + running_high_sum
+            running_high_sums.append(running_high_sum)
+            running_low_sum = running_low_sum + 0
+            running_low_sums.append(running_low_sum)
+        else:
+            running_high_sum = 100 * sub["score"] * sub["assignment"]["group"][
+                "group_weight"] + running_high_sum
+            running_high_sums.append(running_high_sum)
+            running_low_sum = 100 * sub["score"] * sub["assignment"]["group"][
+                "group_weight"] + running_low_sum
+            running_low_sums.append(running_low_sum)
+    final_high_sums = []
+    for hnum in running_high_sums:
+        finalh = hnum / total_points
+        final_high_sums.append(finalh)
+    final_low_sums = []
+    for lnum in running_low_sums:
+        finall = lnum / total_points
+        final_low_sums.append(finall)
+    final_max = []
+    for mnum in maximums:
+        finalm = mnum / total_points
+        final_max.append(finalm)
+    plt.plot(dates, final_high_sums, label="Highest")
+    plt.plot(dates, final_low_sums, label="Lowest")
+    plt.plot(dates, final_max, label="Maximum")
+    plt.legend()
+    plt.title("Grade Trend")
+    plt.ylabel("Grade")
+    plt.show()
 
 
 # Keep any function tests inside this IF statement to ensure
