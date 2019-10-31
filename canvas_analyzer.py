@@ -14,6 +14,7 @@ Refer to the instructions on Canvas for more information.
 author: Nitin Armstrong
 """
 import canvas_requests
+import matplotlib.pyplot as plt
 
 __version__ = 7
 
@@ -121,10 +122,31 @@ def summarize_points(submissions: [dict]):
 
 
 # 8) summarize_groups
+def summarize_groups():
 
 
 # 9) plot_scores
+def plot_scores(submissions: [dict]):
+    '''
+
+    :param submissions:
+    :return:
+    '''
+    x = []
+    for sub in submissions:
+        if sub["score"] != None and sub["assignment"]["points_possible"] > 0:
+            grade = (100*sub["score"])/(sub["assignment"]["points_possible"])
+            a.append(grade)
+        plt.hist(x)
+        plt.title("Distribution of Grades")
+        plt.xlabel("Grades")
+        plt.ylabel("# of Assignments")
+        plt.show()
+
+
 # 10) plot_grade_trends
+def plot_grade_trends():
+
 
 # Keep any function tests inside this IF statement to ensure
 # that your `test_my_solution.py` does not execute it.
